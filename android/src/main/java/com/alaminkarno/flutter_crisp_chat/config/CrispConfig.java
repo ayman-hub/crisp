@@ -11,6 +11,8 @@ public class CrispConfig {
     public boolean enableNotifications = true;
     public User user = null;
 
+    public String local = "en";
+
     public static CrispConfig fromJson(Map<String, Object> json) {
         CrispConfig crispConfig = new CrispConfig();
         crispConfig.websiteId = (String) json.get("websiteId");
@@ -22,7 +24,12 @@ public class CrispConfig {
                     crispConfig.enableNotifications = (Boolean) enableNotificationsObj;
                 }
             }
-
+            if (json.containsKey("local")) {
+                Object localObj = json.get("local");
+                if (localObj != null) {
+                    crispConfig.local = localObj.toString();
+                }
+            }
             if (json.containsKey("tokenId")) {
                 Object tokenIdObj = json.get("tokenId");
                 if (tokenIdObj != null) {

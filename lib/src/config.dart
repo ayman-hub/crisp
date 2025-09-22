@@ -40,12 +40,16 @@ class CrispConfig {
   /// @param sessionSegment (Optional) A segment name for the session.
   /// @param enableNotifications (Optional) Whether to enable notifications. Defaults to `true`.
   /// @param user (Optional) User information.
+
+  String? local;
+
   CrispConfig({
     required this.websiteID,
     this.tokenId,
     this.sessionSegment,
     this.enableNotifications = true,
     this.user,
+    this.local,
   });
 
   /// Converts this [CrispConfig] object to a JSON map.
@@ -59,6 +63,7 @@ class CrispConfig {
       "tokenId": tokenId,
       "sessionSegment": sessionSegment,
       "enableNotifications": enableNotifications,
+      "local": local,
       "user": user?.toJson(),
     };
   }
