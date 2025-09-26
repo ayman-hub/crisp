@@ -63,7 +63,7 @@ class CrispConfig {
       "tokenId": tokenId,
       "sessionSegment": sessionSegment,
       "enableNotifications": enableNotifications,
-      "local": local,
+      "locale": local,
       "user": user?.toJson(),
     };
   }

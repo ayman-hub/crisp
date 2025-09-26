@@ -11,23 +11,30 @@ class MethodChannelFlutterCrispChat extends FlutterCrispChatPlatform {
   @visibleForTesting
   final methodChannel = const MethodChannel('flutter_crisp_chat');
 
-  /// [openCrispChat] is use to invoke the Method Channel and call native
-  /// code with arguments `websiteID`.
+  /// Opens Crisp Chat with UI
   @override
   Future<void> openCrispChat({required CrispConfig config}) async {
     await methodChannel.invokeMethod<CrispConfig>(
-        'openCrispChat', config.toJson());
+      'openCrispChat',
+      config.toJson(),
+    );
   }
 
-  /// [resetCrispChatSession] is use to invoke the Method Channel and call native
-  /// code with no arguments and this will reset the crisp chat session.
+  /// Configures Crisp session silently (no UI)
+  Future<void> configureCrispSession({required CrispConfig config}) async {
+    await methodChannel.invokeMethod<CrispConfig>(
+      'configureCrispSession',
+      config.toJson(),
+    );
+  }
+
+  /// Resets the Crisp chat session
   @override
   Future<void> resetCrispChatSession() async {
     await methodChannel.invokeMethod('resetCrispChatSession');
   }
 
-  /// [setSessionString] is used to invoke the Method Channel and call native
-  /// code with arguments `key` and `value`.
+  /// Sets a session string key/value
   @override
   void setSessionString({required String key, required String value}) {
     methodChannel.invokeMethod('setSessionString', <String, String>{
@@ -36,8 +43,7 @@ class MethodChannelFlutterCrispChat extends FlutterCrispChatPlatform {
     });
   }
 
-  /// [setSessionInt] is used to invoke the Method Channel and call native
-  /// code with arguments `key` and `value`.
+  /// Sets a session int key/value
   @override
   void setSessionInt({required String key, required int value}) {
     methodChannel.invokeMethod('setSessionInt', <String, dynamic>{
@@ -46,7 +52,7 @@ class MethodChannelFlutterCrispChat extends FlutterCrispChatPlatform {
     });
   }
 
-  /// [getSessionIdentifier] retrieves the current session identifier from the native platform.
+  /// Gets the session identifier
   @override
   Future<String?> getSessionIdentifier() async {
     try {
@@ -60,8 +66,7 @@ class MethodChannelFlutterCrispChat extends FlutterCrispChatPlatform {
     }
   }
 
-  /// [setSessionSegments] Sets a collection of session segments
-  /// and optionally overwrite existing ones (default is false)
+  /// Sets session segments
   @override
   void setSessionSegments({
     required List<String> segments,
@@ -73,8 +78,7 @@ class MethodChannelFlutterCrispChat extends FlutterCrispChatPlatform {
     });
   }
 
-  /// [pushSessionEvent] is used to invoke the Method Channel and call native
-  /// code with arguments `name` and `color`.
+  /// Pushes a session event
   @override
   Future<void> pushSessionEvent({
     required String name,

@@ -26,8 +26,7 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 
 /**
- * [FlutterCrispChatPlugin] using [FlutterPlugin], [MethodCallHandler] and [ActivityAware]
- * to handling Method Channel Callback from Flutter and Open new Activity.
+ * FlutterCrispChatPlugin
  */
 public class FlutterCrispChatPlugin implements FlutterPlugin, MethodCallHandler, ActivityAware {
 
@@ -40,7 +39,6 @@ public class FlutterCrispChatPlugin implements FlutterPlugin, MethodCallHandler,
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
         context = flutterPluginBinding.getApplicationContext();
-
         channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), CHANNEL_NAME);
         channel.setMethodCallHandler(this);
     }
@@ -65,7 +63,6 @@ public class FlutterCrispChatPlugin implements FlutterPlugin, MethodCallHandler,
         this.activity = null;
     }
 
-    /// [onMethodCall] if for handling method call from flutter end.
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
         if (call.method.equals("openCrispChat")) {
@@ -85,10 +82,46 @@ public class FlutterCrispChatPlugin implements FlutterPlugin, MethodCallHandler,
             } else {
                 result.notImplemented();
             }
-        } else if (call.method.equals("resetCrispChatSession")) {
+        }
+        else if (call.method.equals("configureCrispSession")) {
+            HashMap<String, Object> args = (HashMap<String, Object>) call.arguments;
+            if (args != null) {
+                CrispConfig config = CrispConfig.fromJson(args);
+
+                // Configure Crisp session silently
+                if (config.tokenId != null) {
+                    Crisp.configure(context, config.websiteId, config.tokenId);
+                } else {
+                    Crisp.configure(context, config.websiteId);
+                }
+
+                Crisp.enableNotifications(context, config.enableNotifications);
+                setCrispData(context, config);
+
+                // Apply locale if provided
+                if (config.local != null && !config.local.isEmpty()) {
+                    try {
+                        Locale locale = new Locale(config.local);
+                        Locale.setDefault(locale);
+                        android.content.res.Configuration configuration = context.getResources().getConfiguration();
+                        configuration.setLocale(locale);
+                        context.getResources().updateConfiguration(configuration, context.getResources().getDisplayMetrics());
+                        Log.d("CRISP_CHAT", "Locale applied silently: " + config.local);
+                    } catch (Exception e) {
+                        Log.e("CRISP_CHAT", "Failed to set locale: " + config.local, e);
+                    }
+                }
+
+                result.success("Crisp configured without opening chat");
+            } else {
+                result.error("INVALID_ARGUMENTS", "Arguments must be provided", null);
+            }
+        }
+        else if (call.method.equals("resetCrispChatSession")) {
             Crisp.resetChatSession(context);
             result.success(null);
-        } else if (call.method.equals("setSessionString")) {
+        }
+        else if (call.method.equals("setSessionString")) {
             HashMap<String, Object> args = (HashMap<String, Object>) call.arguments;
             if (args != null) {
                 String key = (String) args.get("key");
@@ -98,7 +131,8 @@ public class FlutterCrispChatPlugin implements FlutterPlugin, MethodCallHandler,
             } else {
                 result.notImplemented();
             }
-        } else if (call.method.equals("setSessionInt")) {
+        }
+        else if (call.method.equals("setSessionInt")) {
             HashMap<String, Object> args = (HashMap<String, Object>) call.arguments;
             if (args != null) {
                 String key = (String) args.get("key");
@@ -108,14 +142,16 @@ public class FlutterCrispChatPlugin implements FlutterPlugin, MethodCallHandler,
             } else {
                 result.notImplemented();
             }
-        } else if (call.method.equals("getSessionIdentifier")) {
+        }
+        else if (call.method.equals("getSessionIdentifier")) {
             String sessionId = Crisp.getSessionIdentifier(context);
             if (sessionId != null) {
                 result.success(sessionId);
             } else {
                 result.error("NO_SESSION", "No active session found", null);
             }
-        } else if (call.method.equals("setSessionSegments")) {
+        }
+        else if (call.method.equals("setSessionSegments")) {
             HashMap<String, Object> args = (HashMap<String, Object>) call.arguments;
             if (args != null) {
                 List<String> segments = (List<String>) args.get("segments");
@@ -125,7 +161,8 @@ public class FlutterCrispChatPlugin implements FlutterPlugin, MethodCallHandler,
             } else {
                 result.notImplemented();
             }
-        } else if (call.method.equals("pushSessionEvent")) {
+        }
+        else if (call.method.equals("pushSessionEvent")) {
             HashMap<String, Object> args = (HashMap<String, Object>) call.arguments;
 
             if (args != null) {
@@ -164,36 +201,35 @@ public class FlutterCrispChatPlugin implements FlutterPlugin, MethodCallHandler,
                 Crisp.setUserNickname(config.user.nickName);
             }
             if (config.user.email != null) {
-                boolean result =  Crisp.setUserEmail(config.user.email);
-                if(!result){
-                    Log.d("CRSIP_CHAT","Email not set");
+                boolean result = Crisp.setUserEmail(config.user.email);
+                if (!result) {
+                    Log.d("CRISP_CHAT", "Email not set");
                 }
             }
             if (config.user.avatar != null) {
-               boolean result = Crisp.setUserAvatar(config.user.avatar);
-               if(!result){
-                   Log.d("CRSIP_CHAT","Avatar not set");
-               }
+                boolean result = Crisp.setUserAvatar(config.user.avatar);
+                if (!result) {
+                    Log.d("CRISP_CHAT", "Avatar not set");
+                }
             }
             if (config.user.phone != null) {
-                boolean result =  Crisp.setUserPhone(config.user.phone);
-                if(!result){
-                    Log.d("CRSIP_CHAT","Phone not set");
+                boolean result = Crisp.setUserPhone(config.user.phone);
+                if (!result) {
+                    Log.d("CRISP_CHAT", "Phone not set");
                 }
             }
             if (config.user.company != null) {
                 Crisp.setUserCompany(config.user.company.toCrispCompany());
             }
         }
-
     }
 
-    ///[openActivity] is opening ChatView Activity of CrispChat SDK.
     private void openActivity() {
         Intent intent = new Intent(context, ChatActivity.class);
         if (activity != null) {
             activity.startActivity(intent);
         } else {
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         }
     }
@@ -228,5 +264,4 @@ public class FlutterCrispChatPlugin implements FlutterPlugin, MethodCallHandler,
         channel.setMethodCallHandler(null);
         context = null;
     }
-
 }

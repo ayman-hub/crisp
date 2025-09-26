@@ -1,98 +1,76 @@
 import 'package:crisp_chat/crisp_chat.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
-// Background message handler
-//@pragma('vm:entry-point')
-//Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-//  await Firebase.initializeApp();
-//
-//  if (kDebugMode) {
-//    print("Handling a background message: ${message.messageId}");
-//  }
-//}
-
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  // await Firebase.initializeApp(
-  //   options: DefaultFirebaseOptions.currentPlatform,
-  // );
-
-  // Set up background message handler
-  // FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-  // Request notification permission
-  //await _requestNotificationPermission();
-
   runApp(const MyApp());
 }
 
-/*Future<void> _requestNotificationPermission() async {
-  FirebaseMessaging messaging = FirebaseMessaging.instance;
-
-  NotificationSettings settings = await messaging.requestPermission(
-    alert: true,
-    announcement: false,
-    badge: true,
-    carPlay: false,
-    criticalAlert: false,
-    provisional: false,
-    sound: true,
-  );
-
-  if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-    if (kDebugMode) {
-      print('✅ User granted permission');
-    }
-  } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
-    if (kDebugMode) {
-      print('⚠️ User granted provisional permission');
-    }
-  } else {
-    if (kDebugMode) {
-      print('❌ User declined or has not accepted permission');
-    }
-  }
-}*/
-
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Crisp Chat WebView Demo',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: const HomePage(),
+    );
+  }
 }
 
-class _MyAppState extends State<MyApp> {
-  static const String websiteID = String.fromEnvironment('WEBSITE_ID');
-  late CrispConfig config;
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  static const String websiteID =
+      "07387b65-0e31-4cb7-bb3a-509170f52720"; // 👈 put real Crisp ID
+  String? sessionId;
 
   @override
   void initState() {
     super.initState();
+    _initCrispSession();
+  }
 
-    config = CrispConfig(
-      websiteID: websiteID,
-      tokenId: "Token Id",
-      sessionSegment: 'test_segment',
-      user: User(
-        avatar: "https://avatars.githubusercontent.com/u/56608168?v=4",
-        email: "alamin.karno@gmail.com",
-        nickName: "Md. Al-Amin",
-        phone: "5555555555",
-        company: Company(
-          companyDescription: "Unlock superior software solutions"
-              " with Vivasoft, a leading offshore development firm"
-              " delivering creativity and expertise.",
-          name: "Vivasoft Limited",
-          url: "https://vivasoftltd.com/",
-          employment: Employment(
-            role: "Mobile Application Developer",
-            title: "Software Engineer L-II",
-          ),
-          geoLocation: GeoLocation(
-            city: "Dhaka",
-            country: "Bangladesh",
-          ),
+  Future<void> _initCrispSession() async {
+    String? existing = await FlutterCrispChat.getSessionIdentifier();
+
+    if (existing == null) {
+      existing = "custom-session-${DateTime.now().millisecondsSinceEpoch}";
+      FlutterCrispChat.setSessionString(
+        key: "session_id",
+        value: existing,
+      );
+    }
+
+    setState(() {
+      sessionId = existing;
+    });
+
+    debugPrint("🟢 Crisp Session Initialized: $sessionId");
+  }
+
+  void _openCrispWebView() {
+    if (sessionId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Session not ready yet")),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CrispWebViewPage(
+          sessionId: sessionId!,
+          websiteId: websiteID,
         ),
       ),
     );
@@ -100,68 +78,66 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Crisp Chat'),
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                onPressed: () async {
-                  FlutterCrispChat.openCrispChat(config: config);
-
-                  /// Setting session data
-                  FlutterCrispChat.setSessionString(
-                    key: "a_string",
-                    value: "Crisp Chat",
-                  );
-
-                  /// Setting session data
-                  FlutterCrispChat.setSessionInt(
-                    key: "a_number",
-                    value: 12345,
-                  );
-
-                  await Future.delayed(Duration(seconds: 1), () {
-                    FlutterCrispChat.pushSessionEvent(
-                      name: 'test_event',
-                      color: SessionEventColor.green,
-                    );
-                  });
-
-                  /// Checking session ID After 5 sec
-                  await Future.delayed(const Duration(seconds: 5), () async {
-                    String? sessionId =
-                        await FlutterCrispChat.getSessionIdentifier();
-                    if (sessionId != null) {
-                      if (kDebugMode) {
-                        print('Session ID: $sessionId');
-                      }
-                    } else {
-                      if (kDebugMode) {
-                        print('No active session found!');
-                      }
-                    }
-                  });
-
-                  /// Reset crisp Chat Session
-                  /// This will remove all the session data after 5 minutes
-                  /// and close the chat window
-                  await Future.delayed(const Duration(minutes: 5), () async {
-                    await FlutterCrispChat.resetCrispChatSession();
-                  });
-                },
-                child: const Text('Open Crisp Chat'),
-              ),
-            ],
-          ),
+    return Scaffold(
+      appBar: AppBar(title: const Text("Crisp Chat Example")),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: _openCrispWebView,
+          child: const Text("Open Crisp in WebView"),
         ),
       ),
+    );
+  }
+}
+
+class CrispWebViewPage extends StatefulWidget {
+  final String sessionId;
+  final String websiteId;
+
+  const CrispWebViewPage({
+    super.key,
+    required this.sessionId,
+    required this.websiteId,
+  });
+
+  @override
+  State<CrispWebViewPage> createState() => _CrispWebViewPageState();
+}
+
+class _CrispWebViewPageState extends State<CrispWebViewPage> {
+  late final WebViewController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..loadRequest(
+        Uri.parse(
+          "https://go.crisp.chat/chat/embed/?website_id=${widget.websiteId}&locale=ar",
+        ),
+      )
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (_) async {
+            // Inject JS after page fully loads
+            await _controller.runJavaScript("""
+              if (window.\$crisp) {
+                window.\$crisp.push(["set", "session:identifier", "${widget.sessionId}"]);
+                window.\$crisp.push(["set", "session:language", "ar"]);
+              }
+            """);
+          },
+        ),
+      );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Crisp Chat")),
+      body: WebViewWidget(controller: _controller),
     );
   }
 }

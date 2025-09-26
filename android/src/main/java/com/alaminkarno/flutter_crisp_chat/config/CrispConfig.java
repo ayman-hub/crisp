@@ -24,11 +24,12 @@ public class CrispConfig {
                     crispConfig.enableNotifications = (Boolean) enableNotificationsObj;
                 }
             }
-            if (json.containsKey("local")) {
-                Object localObj = json.get("local");
+            if (json.containsKey("locale")) {
+                Object localObj = json.get("locale");
                 if (localObj != null) {
                     crispConfig.local = localObj.toString();
                 }
+                Log.d("LOCALE",localObj.toString());
             }
             if (json.containsKey("tokenId")) {
                 Object tokenIdObj = json.get("tokenId");
